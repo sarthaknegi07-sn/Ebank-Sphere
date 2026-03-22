@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body onload="loadDashboard()">
+
+<div class="dashboard">
+
+    <div class="navbar">
+        <h2 id="welcome"></h2>
+        <button onclick="location.href='index.html'">Logout</button>
+    </div>
+
+    <div class="cards">
+        <div class="card" onclick="document.getElementById('txn').style.display='block'">
+            Transactions
+        </div>
+
+        <div class="card" onclick="calculateScore(); document.getElementById('loanSec').style.display='block'">
+            Apply Loan
+        </div>
+
+        <div class="card" onclick="document.getElementById('appoint').style.display='block'">
+            Appointment
+        </div>
+    </div>
+
+    <!-- TRANSACTION -->
+    <div id="txn" class="section" style="display:none;">
+        <h3>Transactions</h3>
+
+        <input type="text" id="search" placeholder="Search by name">
+        <button onclick="searchTxn()">Search</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th onclick="sortBy('name')">Name</th>
+                    <th onclick="sortBy('amount')">Amount</th>
+                    <th onclick="sortBy('date')">Date</th>
+                    <th onclick="sortBy('time')">Time</th>
+                </tr>
+            </thead>
+            <tbody id="txnTable"></tbody>
+        </table>
+    </div>
+
+    <!-- LOAN -->
+    <div id="loanSec" class="section" style="display:none;">
+        <h3>Loan</h3>
+        <p id="score"></p>
+        <p id="loan"></p>
+    </div>
+
+    <!-- APPOINTMENT -->
+    <div id="appoint" class="section" style="display:none;">
+        <h3>Book Appointment</h3>
+
+        <input type="text" id="name" placeholder="Name"><br><br>
+        <input type="number" id="age" placeholder="Age"><br><br>
+        <input type="date" id="date"><br><br>
+
+        <button onclick="bookAppointment()">Book</button>
+
+        <div id="appointmentResult"></div>
+    </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
