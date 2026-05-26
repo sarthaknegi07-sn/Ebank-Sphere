@@ -1,119 +1,570 @@
-let currentUser = "";
+const roleSection =
+document.getElementById("roleSection");
 
-/* LOGIN */
-function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+const userLoginSection =
+document.getElementById("userLoginSection");
 
-    console.log("Sending:", username, password); // DEBUG
+const adminLoginSection =
+document.getElementById("adminLoginSection");
 
-    fetch("/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            username: username,
-            password: password
-        })
-    })
+const userDashboard =
+document.getElementById("userDashboard");
+
+const adminDashboard =
+document.getElementById("adminDashboard");
+
+const topLogoutBtn =
+document.getElementById("topLogoutBtn");
+
+const myAppointmentBtn =
+document.getElementById("myAppointmentBtn");
+
+const appointmentListCard =
+document.getElementById("appointmentListCard");
+
+const appointmentTable =
+document.getElementById("appointmentTable");
+
+const notificationBox =
+document.getElementById("notificationBox");
+
+const notificationText =
+document.getElementById("notificationText");
+
+const loaderWrapper =
+document.getElementById("loaderWrapper");
+
+const welcomeUser =
+document.getElementById("welcomeUser");
+
+const userBalance =
+document.getElementById("userBalance");
+
+const accountNumber =
+document.getElementById("accountNumber");
+
+const accountStatus =
+document.getElementById("accountStatus");
+
+const transactionTable =
+document.getElementById("transactionTable");
+
+const adminUsersTable =
+document.getElementById("adminUsersTable");
+
+const adminTransactionTable =
+document.getElementById("adminTransactionTable");
+
+const totalUsers =
+document.getElementById("totalUsers");
+
+const totalTransactions =
+document.getElementById("totalTransactions");
+
+const frozenAccounts =
+document.getElementById("frozenAccounts");
+
+const searchUser =
+document.getElementById("searchUser");
+
+const transactionSearch =
+document.getElementById("transactionSearch");
+
+let loggedInUser = null;
+
+/* ================= NOTIFICATION ================= */
+
+function showNotification(message){
+
+    notificationText.innerText = message;
+
+    notificationBox.classList.remove("hidden");
+
+    setTimeout(() => {
+
+        notificationBox.classList.add("hidden");
+
+    }, 2500);
+}
+
+/* ================= LOADER ================= */
+
+function showLoader(){
+    loaderWrapper.classList.remove("hidden");
+}
+
+function hideLoader(){
+    loaderWrapper.classList.add("hidden");
+}
+
+/* ================= NAVIGATION ================= */
+
+document.getElementById("showUserLogin")
+.addEventListener("click", () => {
+
+    roleSection.classList.add("hidden");
+    userLoginSection.classList.remove("hidden");
+});
+
+document.getElementById("showAdminLogin")
+.addEventListener("click", () => {
+
+    roleSection.classList.add("hidden");
+    adminLoginSection.classList.remove("hidden");
+});
+
+document.getElementById("backFromUser")
+.addEventListener("click", () => {
+
+    userLoginSection.classList.add("hidden");
+    roleSection.classList.remove("hidden");
+});
+
+document.getElementById("backFromAdmin")
+.addEventListener("click", () => {
+
+    adminLoginSection.classList.add("hidden");
+    roleSection.classList.remove("hidden");
+});
+
+/* ================= USER LOGIN ================= */
+
+document.getElementById("userLoginForm")
+.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const username =
+    document.getElementById("userUsername").value;
+
+    const password =
+    document.getElementById("userPassword").value;
+
+    showLoader();
+
+    try{
+
+        const res =
+        await fetch("/api/user-login",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                username,
+                password
+            })
+        });
+
+        const data = await res.json();
+
+        hideLoader();
+
+        if(data.success){
+
+            loggedInUser = data.user;
+
+            loadUser(data.user);
+
+            userLoginSection.classList.add("hidden");
+            userDashboard.classList.remove("hidden");
+
+            topLogoutBtn.classList.remove("hidden");
+            myAppointmentBtn.classList.remove("hidden");
+
+            document.getElementById("userLoginForm").reset();
+
+            showNotification("Login successful");
+
+        }else{
+
+            showNotification(data.message);
+        }
+
+    }catch(err){
+
+        hideLoader();
+        showNotification("Server connection failed");
+    }
+});
+
+/* ================= ADMIN LOGIN ================= */
+
+document.getElementById("adminLoginForm")
+.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const username =
+    document.getElementById("adminUsername").value;
+
+    const password =
+    document.getElementById("adminPassword").value;
+
+    showLoader();
+
+    try{
+
+        const res =
+        await fetch("/api/admin-login",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                username,
+                password
+            })
+        });
+
+        const data = await res.json();
+
+        hideLoader();
+
+        if(data.success){
+
+            loadAdmin();
+
+            adminLoginSection.classList.add("hidden");
+            adminDashboard.classList.remove("hidden");
+
+            topLogoutBtn.classList.remove("hidden");
+
+            document.getElementById("adminLoginForm").reset();
+
+            showNotification("Admin login successful");
+
+        }else{
+
+            showNotification(data.message);
+        }
+
+    }catch(err){
+
+        hideLoader();
+        showNotification("Server error");
+    }
+});
+
+/* ================= USER DASHBOARD ================= */
+
+function loadUser(user){
+
+    welcomeUser.innerText = user.username;
+    userBalance.innerText = "₹" + user.balance;
+    accountNumber.innerText = user.account_number;
+    accountStatus.innerText = user.status;
+
+    renderTransactions(user.transactions || []);
+}
+
+function renderTransactions(list){
+
+    transactionTable.innerHTML = "";
+
+    list.forEach(t => {
+
+        const row =
+        document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${t.date}</td>
+            <td>${t.type}</td>
+            <td>${t.sender}</td>
+            <td>${t.receiver}</td>
+            <td>₹${t.amount}</td>
+        `;
+
+        transactionTable.appendChild(row);
+    });
+}
+
+/* ================= SEND MONEY ================= */
+
+document.getElementById("transactionForm")
+.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const receiverAccount =
+    document.getElementById("receiverAccount").value;
+
+    const amount =
+    document.getElementById("sendAmount").value;
+
+    const pin =
+    document.getElementById("transactionPin").value;
+
+    showLoader();
+
+    try{
+
+        const res =
+        await fetch("/api/send-money",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                username:loggedInUser.username,
+                receiverAccount,
+                amount,
+                pin
+            })
+        });
+
+        const data = await res.json();
+
+        hideLoader();
+
+        if(data.success){
+
+            userBalance.innerText =
+            "₹" + data.balance;
+
+            renderTransactions(data.transactions);
+
+            document.getElementById("transactionForm").reset();
+
+            showNotification("Money sent successfully");
+
+        }else{
+
+            showNotification(data.message);
+        }
+
+    }catch(err){
+
+        hideLoader();
+        showNotification("Transaction failed");
+    }
+});
+
+/* ================= APPOINTMENT BOOKING ================= */
+
+document.getElementById("appointmentForm")
+.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const date =
+    document.getElementById("appointmentDate").value;
+
+    const purpose =
+    document.getElementById("appointmentPurpose").value;
+
+    showLoader();
+
+    try{
+
+        const res =
+        await fetch("/api/book-appointment",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                username:loggedInUser.username,
+                date,
+                purpose
+            })
+        });
+
+        const data = await res.json();
+
+        hideLoader();
+
+        if(data.success){
+
+            const a = data.appointment;
+
+            document.getElementById("appointmentResult")
+            .innerHTML =
+            `Appointment Confirmed: ${a.date} at ${a.time}`;
+
+            document.getElementById("appointmentForm").reset();
+
+            showNotification("Appointment booked");
+
+        }else{
+
+            showNotification("Booking failed");
+        }
+
+    }catch(err){
+
+        hideLoader();
+        showNotification("Server error");
+    }
+});
+
+/* ================= MY APPOINTMENTS ================= */
+
+myAppointmentBtn.addEventListener("click", async () => {
+
+    showLoader();
+
+    try{
+
+        const res =
+        await fetch(
+            `/api/appointments/${loggedInUser.username}`
+        );
+
+        const data = await res.json();
+
+        hideLoader();
+
+        appointmentListCard.classList.remove("hidden");
+
+        appointmentTable.innerHTML = "";
+
+        data.forEach(app => {
+
+            const row =
+            document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${app.date}</td>
+                <td>${app.time}</td>
+                <td>${app.purpose}</td>
+            `;
+
+            appointmentTable.appendChild(row);
+        });
+
+    }catch(err){
+
+        hideLoader();
+        showNotification("Failed to load appointments");
+    }
+});
+
+/* ================= ADMIN ================= */
+
+function loadAdmin(){
+
+    fetch("/api/admin-data")
     .then(res => res.json())
     .then(data => {
-        console.log("Response:", data);
 
-        if (data.success) {
-            localStorage.setItem("user", username);
-            window.location.href = "dashboard.html";
-        } else {
-            alert("Invalid login");
-        }
+        totalUsers.innerText = data.total_users;
+        totalTransactions.innerText = data.total_transactions;
+        frozenAccounts.innerText = data.frozen_accounts;
+
+        renderAdminUsers(data.users);
+        renderAdminTransactions(data.transactions);
     });
 }
 
-/* LOAD DASHBOARD */
-function loadDashboard() {
-    currentUser = localStorage.getItem("user");
-    document.getElementById("welcome").innerText = "Welcome " + currentUser;
+function renderAdminUsers(users){
 
-    loadTransactions();
+    adminUsersTable.innerHTML = "";
+
+    users.forEach(u => {
+
+        const row =
+        document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${u.username}</td>
+            <td>${u.account_number}</td>
+            <td>₹${u.balance}</td>
+            <td>${u.status}</td>
+            <td>
+                <button onclick="toggleFreeze('${u.username}')">
+                    ${u.status === "ACTIVE" ? "Freeze" : "Unfreeze"}
+                </button>
+            </td>
+        `;
+
+        adminUsersTable.appendChild(row);
+    });
 }
 
-/* TRANSACTIONS */
-let transactions = [
-    {name: "Rahul", amount: 2000, date: "2026-03-20", time: "10:30"},
-    {name: "Amit", amount: 5000, date: "2026-03-21", time: "12:00"},
-    {name: "Neha", amount: 1500, date: "2026-03-22", time: "09:15"}
-];
+function renderAdminTransactions(list){
 
-function loadTransactions() {
-    let table = document.getElementById("txnTable");
-    table.innerHTML = "";
+    adminTransactionTable.innerHTML = "";
 
-    transactions.forEach(t => {
-        table.innerHTML += `
-        <tr>
-            <td>${t.name}</td>
-            <td>${t.amount}</td>
+    list.forEach(t => {
+
+        const row =
+        document.createElement("tr");
+
+        row.innerHTML = `
             <td>${t.date}</td>
-            <td>${t.time}</td>
-        </tr>`;
+            <td>${t.username}</td>
+            <td>${t.type}</td>
+            <td>₹${t.amount}</td>
+            <td>${t.status}</td>
+        `;
+
+        adminTransactionTable.appendChild(row);
     });
 }
 
-/* SEARCH */
-function searchTxn() {
-    let key = document.getElementById("search").value.toLowerCase();
-    let filtered = transactions.filter(t => t.name.toLowerCase().includes(key));
+/* ================= SEARCH ================= */
 
-    let table = document.getElementById("txnTable");
-    table.innerHTML = "";
+searchUser.addEventListener("keyup", () => {
 
-    filtered.forEach(t => {
-        table.innerHTML += `
-        <tr>
-            <td>${t.name}</td>
-            <td>${t.amount}</td>
-            <td>${t.date}</td>
-            <td>${t.time}</td>
-        </tr>`;
+    const val = searchUser.value.toLowerCase();
+
+    [...adminUsersTable.children].forEach(row => {
+
+        const name =
+        row.children[0].innerText.toLowerCase();
+
+        row.style.display =
+        name.includes(val) ? "" : "none";
     });
-}
+});
 
-/* SORT (DSA: Sorting) */
-function sortBy(field) {
-    transactions.sort((a, b) => {
-        if (field === "amount") return a.amount - b.amount;
-        return a[field].localeCompare(b[field]);
+transactionSearch.addEventListener("keyup", () => {
+
+    const val = transactionSearch.value.toLowerCase();
+
+    [...adminTransactionTable.children].forEach(row => {
+
+        const name =
+        row.children[1].innerText.toLowerCase();
+
+        row.style.display =
+        name.includes(val) ? "" : "none";
     });
-    loadTransactions();
-}
+});
 
-/* CREDIT SCORE (DSA Logic) */
-function calculateScore() {
-    let total = transactions.reduce((sum, t) => sum + t.amount, 0);
-    let score = Math.min(900, Math.floor(total / 10));
+/* ================= FREEZE ================= */
 
-    document.getElementById("score").innerText = "Credit Score: " + score;
-    document.getElementById("loan").innerText = "Eligible Loan: ₹" + (score * 100);
-}
+async function toggleFreeze(username){
 
-/* PRIORITY QUEUE (Appointment) */
-let appointments = [];
-
-function bookAppointment() {
-    let name = document.getElementById("name").value;
-    let age = parseInt(document.getElementById("age").value);
-    let date = document.getElementById("date").value;
-
-    appointments.push({name, age, date});
-
-    // Priority Queue (older first)
-    appointments.sort((a, b) => b.age - a.age);
-
-    let result = document.getElementById("appointmentResult");
-    result.innerHTML = "";
-
-    appointments.forEach((a, i) => {
-        result.innerHTML += `<p>${a.name} - Age: ${a.age} - Priority #${i+1}</p>`;
+    await fetch("/api/toggle-freeze",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({username})
     });
+
+    loadAdmin();
 }
+
+/* ================= LOGOUT ================= */
+
+topLogoutBtn.addEventListener("click", () => {
+
+    loggedInUser = null;
+
+    userDashboard.classList.add("hidden");
+    adminDashboard.classList.add("hidden");
+
+    appointmentListCard.classList.add("hidden");
+    appointmentTable.innerHTML = "";
+    document.getElementById("appointmentResult").innerHTML = "";
+
+    roleSection.classList.remove("hidden");
+
+    topLogoutBtn.classList.add("hidden");
+    myAppointmentBtn.classList.add("hidden");
+
+    showNotification("Logged out");
+});

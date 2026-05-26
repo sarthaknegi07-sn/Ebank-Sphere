@@ -1,23 +1,644 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>eBankSphere - Login</title>
-    <link rel="stylesheet" href="style.css">
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>eBankSphere</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
 </head>
-<body class="login-body">
 
-<div class="login-container">
-    <h1>🏦 eBankSphere</h1>
-    <p class="tagline">Smart Banking System</p>
+<body>
 
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
+    <!-- ================= HEADER ================= -->
 
-    <button onclick="login()">Login</button>
+    <header class="header">
 
-    <p id="error"></p>
-</div>
+        <div class="logo">
 
-<script src="app.js"></script>
+            <h1>eBankSphere</h1>
+
+        </div>
+
+        <div class="top-actions">
+
+            <button
+                id="myAppointmentBtn"
+                class="top-logout hidden"
+            >
+                My Appointments
+            </button>
+
+            <button
+                id="topLogoutBtn"
+                class="top-logout hidden"
+            >
+                Logout
+            </button>
+
+        </div>
+
+    </header>
+
+    <!-- ================= ROLE SECTION ================= -->
+
+    <section
+        class="role-section"
+        id="roleSection"
+    >
+
+        <div class="role-container">
+
+            <h2>
+                Welcome to eBankSphere
+            </h2>
+
+            <p>
+                Select Login Type
+            </p>
+
+            <div class="role-buttons">
+
+                <button id="showUserLogin">
+                    User Login
+                </button>
+
+                <button id="showAdminLogin">
+                    Admin Login
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ================= USER LOGIN ================= -->
+
+    <section
+        class="login-section hidden"
+        id="userLoginSection"
+    >
+
+        <div class="login-box">
+
+            <h2>User Login</h2>
+
+            <form id="userLoginForm">
+
+                <div class="form-group">
+
+                    <label>
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="userUsername"
+                        placeholder="Enter Username"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="userPassword"
+                        placeholder="Enter Password"
+                    >
+
+                </div>
+
+                <button type="submit">
+                    Login
+                </button>
+
+            </form>
+
+            <button
+                class="back-btn"
+                id="backFromUser"
+            >
+                Back
+            </button>
+
+        </div>
+
+    </section>
+
+    <!-- ================= ADMIN LOGIN ================= -->
+
+    <section
+        class="login-section hidden"
+        id="adminLoginSection"
+    >
+
+        <div class="login-box">
+
+            <h2>Admin Login</h2>
+
+            <form id="adminLoginForm">
+
+                <div class="form-group">
+
+                    <label>
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="adminUsername"
+                        placeholder="Enter Admin Username"
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="adminPassword"
+                        placeholder="Enter Admin Password"
+                    >
+
+                </div>
+
+                <button type="submit">
+                    Login
+                </button>
+
+            </form>
+
+            <button
+                class="back-btn"
+                id="backFromAdmin"
+            >
+                Back
+            </button>
+
+        </div>
+
+    </section>
+
+    <!-- ================= USER DASHBOARD ================= -->
+
+    <section
+        class="dashboard hidden"
+        id="userDashboard"
+    >
+
+        <div class="main-content">
+
+            <!-- WELCOME -->
+
+            <div class="card">
+
+                <h2>
+                    Welcome,
+                    <span id="welcomeUser">
+                        User
+                    </span>
+                </h2>
+
+                <p>
+                    Manage your banking activities.
+                </p>
+
+            </div>
+
+            <!-- ACCOUNT INFO -->
+
+            <div class="cards-row">
+
+                <div class="small-card">
+
+                    <h3>
+                        Balance
+                    </h3>
+
+                    <p id="userBalance">
+                        ₹0
+                    </p>
+
+                </div>
+
+                <div class="small-card">
+
+                    <h3>
+                        Account Number
+                    </h3>
+
+                    <p id="accountNumber">
+                        0000
+                    </p>
+
+                </div>
+
+                <div class="small-card">
+
+                    <h3>
+                        Status
+                    </h3>
+
+                    <p id="accountStatus">
+                        ACTIVE
+                    </p>
+
+                </div>
+
+            </div>
+
+            <!-- SEND MONEY -->
+
+            <div class="card">
+
+                <h2>
+                    Send Money
+                </h2>
+
+                <form id="transactionForm">
+
+                    <div class="form-group">
+
+                        <label>
+                            Receiver Account Number
+                        </label>
+
+                        <input
+                            type="text"
+                            id="receiverAccount"
+                        >
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>
+                            Amount
+                        </label>
+
+                        <input
+                            type="number"
+                            id="sendAmount"
+                        >
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>
+                            PIN
+                        </label>
+
+                        <input
+                            type="password"
+                            id="transactionPin"
+                        >
+
+                    </div>
+
+                    <button type="submit">
+                        Send Money
+                    </button>
+
+                </form>
+
+            </div>
+
+            <!-- TRANSACTION HISTORY -->
+
+            <div class="card">
+
+                <h2>
+                    Transaction History
+                </h2>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Date</th>
+
+                            <th>Type</th>
+
+                            <th>Sender</th>
+
+                            <th>Receiver</th>
+
+                            <th>Amount</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="transactionTable">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <!-- BOOK APPOINTMENT -->
+
+            <div class="card">
+
+                <h2>
+                    Book Appointment
+                </h2>
+
+                <form id="appointmentForm">
+
+                    <div class="form-group">
+
+                        <label>
+                            Select Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="appointmentDate"
+                        >
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>
+                            Purpose
+                        </label>
+
+                        <select
+                            id="appointmentPurpose"
+                        >
+
+                            <option>
+                                Loan Discussion
+                            </option>
+
+                            <option>
+                                General Banking
+                            </option>
+
+                            <option>
+                                Credit Card Support
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <button type="submit">
+                        Book Appointment
+                    </button>
+
+                </form>
+
+                <div
+                    class="result-box"
+                    id="appointmentResult"
+                >
+
+                </div>
+
+            </div>
+
+            <!-- MY APPOINTMENTS -->
+
+            <div
+                class="card hidden"
+                id="appointmentListCard"
+            >
+
+                <h2>
+                    My Appointments
+                </h2>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Purpose</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="appointmentTable">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ================= ADMIN DASHBOARD ================= -->
+
+    <section
+        class="dashboard hidden"
+        id="adminDashboard"
+    >
+
+        <div class="main-content">
+
+            <!-- STATS -->
+
+            <div class="cards-row">
+
+                <div class="small-card">
+
+                    <h3>
+                        Total Users
+                    </h3>
+
+                    <p id="totalUsers">
+                        0
+                    </p>
+
+                </div>
+
+                <div class="small-card">
+
+                    <h3>
+                        Transactions
+                    </h3>
+
+                    <p id="totalTransactions">
+                        0
+                    </p>
+
+                </div>
+
+                <div class="small-card">
+
+                    <h3>
+                        Frozen Accounts
+                    </h3>
+
+                    <p id="frozenAccounts">
+                        0
+                    </p>
+
+                </div>
+
+            </div>
+
+            <!-- USER MANAGEMENT -->
+
+            <div class="card">
+
+                <div class="table-header">
+
+                    <h2>
+                        User Management
+                    </h2>
+
+                    <input
+                        type="text"
+                        id="searchUser"
+                        placeholder="Search User"
+                    >
+
+                </div>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Username</th>
+
+                            <th>Account</th>
+
+                            <th>Balance</th>
+
+                            <th>Status</th>
+
+                            <th>Action</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody
+                        id="adminUsersTable"
+                    >
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <!-- TRANSACTION MONITOR -->
+
+            <div class="card">
+
+                <div class="table-header">
+
+                    <h2>
+                        Transaction Monitor
+                    </h2>
+
+                    <input
+                        type="text"
+                        id="transactionSearch"
+                        placeholder="Enter Username"
+                    >
+
+                </div>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Date</th>
+
+                            <th>User</th>
+
+                            <th>Type</th>
+
+                            <th>Amount</th>
+
+                            <th>Status</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody
+                        id="adminTransactionTable"
+                    >
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ================= NOTIFICATION ================= -->
+
+    <div
+        class="notification hidden"
+        id="notificationBox"
+    >
+
+        <p id="notificationText">
+            Notification
+        </p>
+
+    </div>
+
+    <!-- ================= LOADER ================= -->
+
+    <div
+        class="loader-wrapper hidden"
+        id="loaderWrapper"
+    >
+
+        <div class="loader"></div>
+
+    </div>
+
+    <script src="app.js"></script>
+
 </body>
+
 </html>

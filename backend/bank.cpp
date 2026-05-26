@@ -1,205 +1,370 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
 #include "sqlite3.h"
+
 using namespace std;
 
-// ---------------- INIT DATABASE ----------------
-void init(sqlite3 *db)
-{
-    char *err;
+/* ================= DB ================= */
 
-    // USERS
-    sqlite3_exec(db,
+sqlite3* DB;
+
+/* ================= UTIL ================= */
+
+string today() {
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+
+    stringstream ss;
+    ss << 1900 + ltm->tm_year << "-"
+       << setw(2) << setfill('0') << 1 + ltm->tm_mon << "-"
+       << setw(2) << setfill('0') << ltm->tm_mday;
+
+    return ss.str();
+}
+
+string randomTimeSlot() {
+    string slots[] = {
+        "10:00 AM",
+        "11:30 AM",
+        "01:00 PM",
+        "02:30 PM",
+        "04:00 PM"
+    };
+
+    return slots[rand() % 5];
+}
+
+/* ================= INIT DB ================= */
+
+void runSQL(string sql) {
+    char* err;
+    sqlite3_exec(DB, sql.c_str(), 0, 0, &err);
+    if (err) sqlite3_free(err);
+}
+
+void initDB() {
+
+    runSQL(
         "CREATE TABLE IF NOT EXISTS users("
         "username TEXT PRIMARY KEY,"
-        "password TEXT);",
-        0, 0, &err);
+        "password TEXT,"
+        "account TEXT,"
+        "balance REAL,"
+        "status TEXT,"
+        "pin TEXT);"
+    );
 
-    // TRANSACTIONS
-    sqlite3_exec(db,
+    runSQL(
         "CREATE TABLE IF NOT EXISTS transactions("
         "id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "username TEXT,"
+        "type TEXT,"
+        "sender TEXT,"
         "receiver TEXT,"
-        "amount INTEGER,"
+        "amount REAL,"
         "date TEXT,"
-        "time TEXT);",
-        0, 0, &err);
+        "status TEXT);"
+    );
 
-    // LOANS
-    sqlite3_exec(db,
-        "CREATE TABLE IF NOT EXISTS loans("
-        "username TEXT,"
-        "credit_score INTEGER);",
-        0, 0, &err);
-
-    // APPOINTMENTS
-    sqlite3_exec(db,
+    runSQL(
         "CREATE TABLE IF NOT EXISTS appointments("
-        "name TEXT,"
-        "age INTEGER,"
+        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "username TEXT,"
         "date TEXT,"
         "time TEXT,"
-        "counter INTEGER);",
-        0, 0, &err);
-
-    // INSERT USERS
-    sqlite3_exec(db,
-        "INSERT OR IGNORE INTO users VALUES"
-        "('user1','1234'),"
-        "('user2','1234'),"
-        "('user3','1234');",
-        0, 0, &err);
-
-    // INSERT TRANSACTIONS
-    sqlite3_exec(db,
-        "INSERT INTO transactions(username,receiver,amount,date,time) VALUES"
-        "('user1','Rahul',500,'2026-03-01','10:00'),"
-        "('user1','Amit',700,'2026-03-02','12:00'),"
-        "('user2','Sita',900,'2026-03-03','14:00'),"
-        "('user3','Ramesh',300,'2026-03-04','16:00');",
-        0, 0, &err);
+        "purpose TEXT);"
+    );
 }
 
-// ---------------- LOGIN ----------------
-bool login(sqlite3 *db, string user, string pass)
-{
-    string query = "SELECT * FROM users WHERE username='" + user + "' AND password='" + pass + "';";
-    sqlite3_stmt *stmt;
+/* ================= DEFAULT USERS ================= */
 
-    sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, 0);
+void seedUsers() {
 
-    bool success = false;
-    if (sqlite3_step(stmt) == SQLITE_ROW)
-        success = true;
+    runSQL("DELETE FROM users;");
 
-    sqlite3_finalize(stmt);
-    return success;
+    runSQL(
+        "INSERT INTO users VALUES"
+        "('user1','1234','4382',12000,'ACTIVE','1234'),"
+        "('user2','1234','5281',15000,'ACTIVE','1234'),"
+        "('user3','1234','7610',18000,'ACTIVE','1234');"
+    );
 }
 
-// ---------------- VIEW TRANSACTIONS ----------------
-int callback(void *NotUsed, int argc, char **argv, char **azColName)
-{
-    for (int i = 0; i < argc; i++)
-        cout << argv[i] << " ";
-    cout << endl;
-    return 0;
-}
+/* ================= USER FETCH ================= */
 
-void showTransactions(sqlite3 *db, string user)
-{
-    string query = "SELECT receiver,amount,date,time FROM transactions WHERE username='" + user + "';";
-    char *err;
-    sqlite3_exec(db, query.c_str(), callback, 0, &err);
-}
-
-// ---------------- CREDIT SCORE ----------------
-int creditScore(sqlite3 *db, string user)
-{
-    string query = "SELECT SUM(amount) FROM transactions WHERE username='" + user + "';";
-    sqlite3_stmt *stmt;
-
-    sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, 0);
-
-    int total = 0;
-    if (sqlite3_step(stmt) == SQLITE_ROW)
-        total = sqlite3_column_int(stmt, 0);
-
-    sqlite3_finalize(stmt);
-
-    // Simple formula
-    return total / 10;
-}
-
-// ---------------- APPOINTMENT (Priority Queue) ----------------
-struct Person
-{
-    string name;
-    int age;
-    string date;
-
-    bool operator<(const Person &other) const
-    {
-        return age < other.age; // older = higher priority
-    }
+struct User {
+    string username;
+    string account;
+    double balance;
+    string status;
+    string pin;
 };
 
-void bookAppointment(sqlite3 *db, string name, int age, string date)
-{
-    priority_queue<Person> pq;
+User getUser(string username) {
 
-    pq.push({name, age, date});
+    User u;
 
-    Person p = pq.top();
+    string sql =
+        "SELECT * FROM users WHERE username='" + username + "';";
 
-    int counter = rand() % 5 + 1;
-    string time = "10:00";
+    sqlite3_stmt* stmt;
 
-    string query = "INSERT INTO appointments VALUES('" +
-                   p.name + "'," +
-                   to_string(p.age) + ",'" +
-                   p.date + "','" +
-                   time + "'," +
-                   to_string(counter) + ");";
+    sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, 0);
 
-    char *err;
-    sqlite3_exec(db, query.c_str(), 0, 0, &err);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
 
-    cout << "APPOINTMENT_BOOKED";
+        u.username = (char*)sqlite3_column_text(stmt, 0);
+        u.account  = (char*)sqlite3_column_text(stmt, 2);
+        u.balance  = sqlite3_column_double(stmt, 3);
+        u.status   = (char*)sqlite3_column_text(stmt, 4);
+        u.pin      = (char*)sqlite3_column_text(stmt, 5);
+    }
+
+    sqlite3_finalize(stmt);
+
+    return u;
 }
 
-// ---------------- MAIN ----------------
-int main(int argc, char *argv[])
-{
-    sqlite3 *db;
+/* ================= LOGIN ================= */
 
-    // IMPORTANT PATH
-    if (sqlite3_open("../bank.db", &db))
-    {
-        cout << "DB_ERROR";
-        return 0;
+bool userLogin(string u, string p) {
+
+    string sql =
+        "SELECT * FROM users WHERE username='" + u +
+        "' AND password='" + p + "';";
+
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, 0);
+
+    bool ok = false;
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        string status = (char*)sqlite3_column_text(stmt, 4);
+        ok = (status != "FROZEN");
     }
 
-    init(db);
+    sqlite3_finalize(stmt);
 
-    string action = argv[1];
+    return ok;
+}
 
-    // LOGIN
-    if (action == "login")
-    {
-        string user = argv[2];
-        string pass = argv[3];
+bool adminLogin(string u, string p) {
+    return (u == "admin" && p == "admin123");
+}
 
-        if (login(db, user, pass))
-            cout << "SUCCESS";
-        else
-            cout << "FAIL";
+/* ================= TRANSACTIONS ================= */
+
+void addTransaction(string u, string type, string sender, string receiver, double amount) {
+
+    string sql =
+        "INSERT INTO transactions(username,type,sender,receiver,amount,date,status)"
+        "VALUES('" + u + "','" + type + "','" + sender + "','" + receiver + "',"
+        + to_string(amount) + ",'" + today() + "','SUCCESS');";
+
+    runSQL(sql);
+}
+
+/* ================= SEND MONEY ================= */
+
+bool sendMoney(string sender, string receiverAccount, double amount, string pin) {
+
+    User s = getUser(sender);
+
+    if (s.pin != pin) return false;
+    if (s.balance < amount) return false;
+
+    string sqlR =
+        "SELECT username FROM users WHERE account='" + receiverAccount + "';";
+
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(DB, sqlR.c_str(), -1, &stmt, 0);
+
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        return false;
     }
 
-    // TRANSACTIONS
-    else if (action == "transactions")
-    {
-        string user = argv[2];
-        showTransactions(db, user);
+    string receiver = (char*)sqlite3_column_text(stmt, 0);
+
+    sqlite3_finalize(stmt);
+
+    runSQL(
+        "UPDATE users SET balance = balance - " + to_string(amount) +
+        " WHERE username='" + sender + "';"
+    );
+
+    runSQL(
+        "UPDATE users SET balance = balance + " + to_string(amount) +
+        " WHERE username='" + receiver + "';"
+    );
+
+    addTransaction(sender, "TRANSFER", sender, receiver, amount);
+
+    return true;
+}
+
+/* ================= APPOINTMENT ================= */
+
+bool bookAppointment(string user, string date, string purpose) {
+
+    string time = randomTimeSlot();
+
+    string sql =
+        "INSERT INTO appointments(username,date,time,purpose)"
+        "VALUES('" + user + "','" + date + "','" + time + "','" + purpose + "');";
+
+    runSQL(sql);
+
+    return true;
+}
+
+/* ================= APPOINTMENTS FETCH ================= */
+
+string getAppointments(string user) {
+
+    string sql =
+        "SELECT date,time,purpose FROM appointments WHERE username='" + user + "';";
+
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(DB, sql.c_str(), -1, &stmt, 0);
+
+    string result = "[";
+
+    bool first = true;
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+
+        if (!first) result += ",";
+
+        result += "{";
+
+        result += "\"date\":\"" + string((char*)sqlite3_column_text(stmt,0)) + "\",";
+        result += "\"time\":\"" + string((char*)sqlite3_column_text(stmt,1)) + "\",";
+        result += "\"purpose\":\"" + string((char*)sqlite3_column_text(stmt,2)) + "\"";
+
+        result += "}";
+
+        first = false;
     }
 
-    // LOAN
-    else if (action == "loan")
-    {
-        string user = argv[2];
-        int score = creditScore(db, user);
-        cout << "CREDIT_SCORE " << score;
+    result += "]";
+
+    sqlite3_finalize(stmt);
+
+    return result;
+}
+
+/* ================= ADMIN ================= */
+
+string getAllUsers() {
+
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(DB, "SELECT username,account,balance,status FROM users;", -1, &stmt, 0);
+
+    string r = "[";
+
+    bool first = true;
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+
+        if (!first) r += ",";
+
+        r += "{";
+
+        r += "\"username\":\"" + string((char*)sqlite3_column_text(stmt,0)) + "\",";
+        r += "\"account\":\"" + string((char*)sqlite3_column_text(stmt,1)) + "\",";
+        r += "\"balance\":" + to_string(sqlite3_column_double(stmt,2)) + ",";
+        r += "\"status\":\"" + string((char*)sqlite3_column_text(stmt,3)) + "\"";
+
+        r += "}";
+
+        first = false;
     }
 
-    // APPOINTMENT
-    else if (action == "appointment")
-    {
-        string name = argv[2];
-        int age = stoi(argv[3]);
-        string date = argv[4];
+    r += "]";
 
-        bookAppointment(db, name, age, date);
+    sqlite3_finalize(stmt);
+
+    return r;
+}
+
+string getAllTransactions() {
+
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(DB,
+        "SELECT username,type,sender,receiver,amount,date,status FROM transactions;",
+        -1, &stmt, 0);
+
+    string r = "[";
+
+    bool first = true;
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+
+        if (!first) r += ",";
+
+        r += "{";
+
+        r += "\"username\":\"" + string((char*)sqlite3_column_text(stmt,0)) + "\",";
+        r += "\"type\":\"" + string((char*)sqlite3_column_text(stmt,1)) + "\",";
+        r += "\"sender\":\"" + string((char*)sqlite3_column_text(stmt,2)) + "\",";
+        r += "\"receiver\":\"" + string((char*)sqlite3_column_text(stmt,3)) + "\",";
+        r += "\"amount\":" + to_string(sqlite3_column_double(stmt,4)) + ",";
+        r += "\"date\":\"" + string((char*)sqlite3_column_text(stmt,5)) + "\",";
+        r += "\"status\":\"" + string((char*)sqlite3_column_text(stmt,6)) + "\"";
+
+        r += "}";
+
+        first = false;
     }
 
-    sqlite3_close(db);
+    r += "]";
+
+    sqlite3_finalize(stmt);
+
+    return r;
+}
+
+void toggleFreeze(string username) {
+
+    runSQL(
+        "UPDATE users SET status = CASE "
+        "WHEN status='ACTIVE' THEN 'FROZEN' "
+        "ELSE 'ACTIVE' END "
+        "WHERE username='" + username + "';"
+    );
+}
+
+/* ================= MAIN (CGI STYLE PLACEHOLDER) ================= */
+
+int main() {
+
+    srand(time(0));
+
+    sqlite3_open("bank.db", &DB);
+
+    initDB();
+    seedUsers();
+
+    cout << "Content-Type: application/json\n\n";
+
+    /* NOTE:
+       In real CGI, you would parse QUERY_STRING / POST body.
+       Here backend is prepared for Express integration.
+    */
+
+    cout << "{\"status\":\"bank.cpp loaded\"}";
+
+    sqlite3_close(DB);
+
     return 0;
 }
