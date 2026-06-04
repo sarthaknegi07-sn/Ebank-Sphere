@@ -94,24 +94,6 @@ SQLite Database (bank.db)
 
 ---
 
-## System Architecture
-
-Frontend (HTML/CSS/JS)
-
-↓
-
-Node.js + Express Server
-
-↓
-
-C++ Banking Engine (bank.cpp)
-
-↓
-
-SQLite Database (bank.db)
-
----
-
 ## Database Design
 
 ### Users Table
